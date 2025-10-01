@@ -1,0 +1,57 @@
+---
+title: "Data Science program evaluation"
+---
+
+## Setup
+
+```{r}
+#| label: setup
+#| echo: false
+
+library(conflicted)
+library(dplyr)
+conflicts_prefer(dplyr::filter)
+library(here)
+
+incoming_dsci_major_students_survey_file <- here(
+  "data",
+  "raw",
+  "incoming-dsci-major-students-survey.qs2"
+)
+```
+
+### Qualtrics survey data
+
+This workflow assumes that you generated a [Qualtrics API key](https://api.qualtrics.com/ZG9jOjg3NjYzMg-api-key-authentication) and saved it securely with `keyring::key_set("qualtrics_api_key")` in your OS's secure secret store.
+In addition, request access to the Qualtrics Data Science surveys from Stephan Koenig.
+
+```{r}
+#| label: qualtrics
+#| #| eval: false
+
+# Do only once per system
+# keyring::key_set("qualtrics_api_key")
+qualtRics::qualtrics_api_credentials(
+  api_key = keyring::key_get("qualtrics_api_key"),
+  base_url = "ubc.yul1.qualtrics.com"
+)
+
+surveys <- qualtRics::all_surveys()
+incoming_dsci_major_students_survey_id <-
+  surveys$id[surveys$name == "Incoming DSCI Major students survey"]
+qualtRics::fetch_survey(incoming_dsci_major_students_survey_id) |>
+  qs2::qs_save(incoming_dsci_major_students_survey_file)
+```
+
+## Analysis
+
+```{r}
+#| label: load-data
+
+incoming_students_survey <-
+  qs2::qs_read(incoming_dsci_major_students_survey_file) |>
+  janitor::clean_names()
+
+completed_incoming_students_survey <- incoming_students_survey |>
+  filter(progress >= 89)
+```
