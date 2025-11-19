@@ -7,16 +7,28 @@ title: "Data Science program evaluation"
 ```{r}
 #| label: setup
 #| echo: false
+#| message: false
 
 library(conflicted)
 library(dplyr)
 conflicts_prefer(dplyr::filter)
+library(gtsummary)
 library(here)
+library(purrr)
+library(readxl)
+library(stringr)
+library(tidyr)
 
 incoming_dsci_major_students_survey_file <- here(
   "data",
   "raw",
   "incoming-dsci-major-students-survey.qs2"
+)
+
+coded_responses_file <- here(
+  "data",
+  "raw",
+  "incoming-dsci-major-students-survey.xlsx"
 )
 ```
 
@@ -27,7 +39,8 @@ In addition, request access to the Qualtrics Data Science surveys from Stephan K
 
 ```{r}
 #| label: qualtrics
-#| #| eval: false
+#| eval: false
+#| echo: false
 
 # Do only once per system
 # keyring::key_set("qualtrics_api_key")
@@ -47,6 +60,7 @@ qualtRics::fetch_survey(incoming_dsci_major_students_survey_id) |>
 
 ```{r}
 #| label: load-data
+#| echo: false
 
 incoming_students_survey <-
   qs2::qs_read(incoming_dsci_major_students_survey_file) |>
@@ -54,4 +68,81 @@ incoming_students_survey <-
 
 completed_incoming_students_survey <- incoming_students_survey |>
   filter(progress >= 89)
+
+sheet_names <- str_c("q", 3:6)
+coded_responses <- map(
+  sheet_names,
+  \(sheet) {
+    read_xlsx(
+      coded_responses_file,
+      sheet = sheet,
+      skip = 1
+    ) |>
+      janitor::clean_names()
+  }
+) |>
+  reduce(
+    \(x, y) {
+      full_join(
+        x,
+        y,
+        by = join_by(
+          response_id
+        ),
+        relationship = "one-to-one"
+      )
+    }
+  )
+
+coded_survey <- left_join(
+  completed_incoming_students_survey,
+  coded_responses,
+  by = join_by(response_id)
+)
+```
+
+```{r}
+#| label: information
+#| echo: false
+
+coded_survey |>
+  select(!c(q2_11, q2_11_text)) |>
+  pivot_longer(starts_with("q2"), values_to = "information_source") |>
+  count(information_source, sort = TRUE)
+```
+
+```{r}
+#| label: application-process
+#| echo: false
+
+coded_survey |>
+  separate_longer_delim(q3_coded, delim = "; ") |>
+  tbl_summary(include = q3_coded)
+```
+
+```{r}
+#| label: ranking
+#| echo: false
+
+coded_survey |>
+  separate_longer_delim(q4_coded, delim = "; ") |>
+  tbl_summary(include = q4_coded)
+```
+
+```{r}
+#| label: interests
+#| echo: false
+
+coded_survey |>
+  separate_longer_delim(q5_coded, delim = "; ") |>
+  tbl_summary(include = q5_coded)
+```
+
+```{r}
+#| label: concerns
+#| echo: false
+
+coded_survey |>
+  separate_longer_delim(q6_coded, delim = "; ") |>
+  tbl_summary(include = q6_coded)
 ```
