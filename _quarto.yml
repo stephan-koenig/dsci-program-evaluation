@@ -1,5 +1,8 @@
 project:
+  preview:
+    port: 4200
   type: website
+  output-dir: _site
 
 website:
   title: "Data Science program evaluation"
@@ -11,3 +14,14 @@ website:
 format:
   html:
     toc: true
+    highlight-style: ayu
+    respect-user-color-scheme: true
+    citation-hover: true
+    footnotes-hover: true
+
+bibliography: references.bib
+
+editor_options:
+  markdown:
+    wrap: sentence
+    canonical: true
