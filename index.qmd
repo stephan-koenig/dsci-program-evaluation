@@ -1,12 +1,13 @@
 ---
 title: "Data Science program evaluation"
+execute:
+  echo: false
 ---
 
 ## Setup
 
 ```{r}
 #| label: setup
-#| echo: false
 #| message: false
 
 library(conflicted)
@@ -40,7 +41,6 @@ In addition, request access to the Qualtrics Data Science surveys from Stephan K
 ```{r}
 #| label: qualtrics
 #| eval: false
-#| echo: false
 
 # Do only once per system
 # keyring::key_set("qualtrics_api_key")
@@ -111,7 +111,6 @@ coded_survey <- left_join(
 
 ```{r}
 #| label: information
-#| echo: false
 
 coded_survey |>
   select(!c(q2_11, q2_11_text)) |>
@@ -121,7 +120,6 @@ coded_survey |>
 
 ```{r}
 #| label: application-process
-#| echo: false
 
 coded_survey |>
   separate_longer_delim(q3_coded, delim = "; ") |>
@@ -130,7 +128,6 @@ coded_survey |>
 
 ```{r}
 #| label: ranking
-#| echo: false
 
 coded_survey |>
   separate_longer_delim(q4_coded, delim = "; ") |>
@@ -139,7 +136,6 @@ coded_survey |>
 
 ```{r}
 #| label: interests
-#| echo: false
 
 coded_survey |>
   separate_longer_delim(q5_coded, delim = "; ") |>
@@ -148,7 +144,6 @@ coded_survey |>
 
 ```{r}
 #| label: concerns
-#| echo: false
 
 coded_survey |>
   separate_longer_delim(q6_coded, delim = "; ") |>
