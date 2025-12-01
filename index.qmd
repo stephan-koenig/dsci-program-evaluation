@@ -75,7 +75,7 @@ Multiple codes assigned to a response are separated by a semicolon.
 ```{r}
 #| label: coded-responses
 
-sheet_names <- str_c("q", 3:6)
+sheet_names <- str_c("q", 2:6)
 coded_responses <- map(
   sheet_names,
   \(sheet) {
@@ -115,6 +115,10 @@ coded_survey <- left_join(
 coded_survey |>
   select(!c(q2_11, q2_11_text)) |>
   pivot_longer(starts_with("q2"), values_to = "information_source") |>
+  drop_na(information_source) |>
+  # Ensure that each respondent's coded open-ended responses is not redundant
+  # and thus doubly reported with multiple-choice selections
+  distinct(response_id, information_source) |>
   count(information_source, sort = TRUE)
 ```
 
