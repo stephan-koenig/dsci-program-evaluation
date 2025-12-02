@@ -13,8 +13,10 @@ execute:
 library(conflicted)
 library(dplyr)
 conflicts_prefer(dplyr::filter)
+library(gt)
 library(gtsummary)
 library(here)
+library(labelled)
 library(purrr)
 library(readxl)
 library(stringr)
@@ -24,6 +26,12 @@ incoming_dsci_major_students_survey_file <- here(
   "data",
   "raw",
   "incoming-dsci-major-students-survey.qs2"
+)
+
+dictionary_file <- here(
+  "data",
+  "raw",
+  "incoming-dsci-major-students-survey-dictionary.qs2"
 )
 
 coded_responses_file <- here(
@@ -57,10 +65,13 @@ qualtRics::fetch_survey(
   breakout_sets = FALSE
 ) |>
   qs2::qs_save(incoming_dsci_major_students_survey_file)
+qualtRics::survey_questions(incoming_dsci_major_students_survey_id) |>
+  qs2::qs_save(dictionary_file)
 ```
 
 Qualtrics delimiter for multiple selections (`,` surrounded by no spaces) was replaced with `; `
 Survey responses were manually inspected and all responses with a `progress` of 89 or more are considered complete.
+Full length questions were downloaded as a dictionary.
 
 ```{r}
 #| label: load-data
@@ -72,6 +83,8 @@ incoming_students_survey <-
 
 completed_incoming_students_survey <- incoming_students_survey |>
   filter(progress >= 89)
+
+dictionary <- qs2::qs_read(dictionary_file)
 ```
 
 An Excel version of the data was also downloaded. For each open-ended question, a dedicated sheet was created (for example, sheet "q6" for question 6) and then responses were manually coded.
@@ -105,11 +118,25 @@ coded_responses <- map(
     }
   )
 
+full_questions <- dictionary |>
+  mutate(qname = str_to_lower(qname)) |>
+  dictionary_to_variable_labels(
+    names_from = qname,
+    labels_from = question
+  )
+
 coded_survey <- left_join(
   completed_incoming_students_survey,
   coded_responses,
   by = join_by(response_id)
-)
+) |>
+  set_variable_labels(
+    q2 = full_questions$q2,
+    q3_coded = full_questions$q3,
+    q4_coded = full_questions$q4,
+    q5_coded = full_questions$q5,
+    q6_coded = full_questions$q6
+  )
 ```
 
 ## Analysis
@@ -124,7 +151,9 @@ coded_survey |>
   # Ensure that each respondent's coded open-ended responses is not redundant
   # and thus doubly reported with multiple-choice selections
   distinct(response_id, q2) |>
-  count(q2, sort = TRUE)
+  copy_labels_from(coded_survey) |>
+  count(q2, sort = TRUE) |>
+  gt()
 ```
 
 ```{r}
