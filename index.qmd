@@ -145,8 +145,9 @@ coded_survey <- left_join(
 #| label: information
 
 coded_survey |>
-  select(response_id, q2) |>
+  select(response_id, q2, q2_coded) |>
   separate_longer_delim(q2, delim = "; ") |>
+  mutate(q2 = if_else(str_detect(q2, "Please"), q2_coded, q2)) |>
   drop_na(q2) |>
   # Ensure that each respondent's coded open-ended responses is not redundant
   # and thus doubly reported with multiple-choice selections
