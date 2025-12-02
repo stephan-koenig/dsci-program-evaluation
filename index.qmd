@@ -52,10 +52,14 @@ qualtRics::qualtrics_api_credentials(
 surveys <- qualtRics::all_surveys()
 incoming_dsci_major_students_survey_id <-
   surveys$id[surveys$name == "Incoming DSCI Major students survey"]
-qualtRics::fetch_survey(incoming_dsci_major_students_survey_id) |>
+qualtRics::fetch_survey(
+  incoming_dsci_major_students_survey_id,
+  breakout_sets = FALSE
+) |>
   qs2::qs_save(incoming_dsci_major_students_survey_file)
 ```
 
+Qualtrics delimiter for multiple selections (`,` surrounded by no spaces) was replaced with `; `
 Survey responses were manually inspected and all responses with a `progress` of 89 or more are considered complete.
 
 ```{r}
@@ -63,14 +67,15 @@ Survey responses were manually inspected and all responses with a `progress` of 
 
 incoming_students_survey <-
   qs2::qs_read(incoming_dsci_major_students_survey_file) |>
-  janitor::clean_names()
+  janitor::clean_names() |>
+  mutate(q2 = str_replace_all(q2, "(?<=\\S),(?=\\S)", "; "))
 
 completed_incoming_students_survey <- incoming_students_survey |>
   filter(progress >= 89)
 ```
 
 An Excel version of the data was also downloaded. For each open-ended question, a dedicated sheet was created (for example, sheet "q6" for question 6) and then responses were manually coded.
-Multiple codes assigned to a response are separated by a semicolon.
+Multiple codes assigned to a response are separated by `; `.
 
 ```{r}
 #| label: coded-responses
@@ -113,13 +118,13 @@ coded_survey <- left_join(
 #| label: information
 
 coded_survey |>
-  select(!c(q2_11, q2_11_text)) |>
-  pivot_longer(starts_with("q2"), values_to = "information_source") |>
-  drop_na(information_source) |>
+  select(response_id, q2) |>
+  separate_longer_delim(q2, delim = "; ") |>
+  drop_na(q2) |>
   # Ensure that each respondent's coded open-ended responses is not redundant
   # and thus doubly reported with multiple-choice selections
-  distinct(response_id, information_source) |>
-  count(information_source, sort = TRUE)
+  distinct(response_id, q2) |>
+  count(q2, sort = TRUE)
 ```
 
 ```{r}
