@@ -147,8 +147,9 @@ coded_survey <- left_join(
   )
 ```
 
-## Analysis
+## Incoming DSCI Major students survey
 
+::: {#tbl-information}
 ```{r}
 #| label: information
 
@@ -165,26 +166,46 @@ coded_survey |>
   gt()
 ```
 
+Students' multiple answers and coded opend-ended ("Other:") responses ($n$ = `{r} nrow(coded_survey)`).
+:::
+
+::: {#tbl-application-process}
 ```{r}
 #| label: application-process
 
 tabulate_coded_responses(coded_survey, q3_coded)
 ```
 
+Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(coded_survey)`).
+"Transfer:" indicates answers from transfer students.
+:::
+
+::: {#tbl-ranking}
 ```{r}
 #| label: ranking
 
 tabulate_coded_responses(coded_survey, q4_coded)
 ```
 
+Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(coded_survey)`).
+:::
+
+::: {#tbl-interests}
 ```{r}
 #| label: interests
 
 tabulate_coded_responses(coded_survey, q5_coded)
 ```
 
+Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(coded_survey)`).
+"Skill" indicates responses denoting interest in learning that particular skill.
+:::
+
+::: {#tbl-concerns}
 ```{r}
 #| label: concerns
 
 tabulate_coded_responses(coded_survey, q6_coded)
 ```
+Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(coded_survey)`).
+:::
