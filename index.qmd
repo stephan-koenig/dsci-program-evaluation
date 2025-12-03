@@ -1,5 +1,8 @@
 ---
 title: "Data Science program evaluation"
+format:
+  html: default
+  typst: default
 execute:
   echo: false
 ---
