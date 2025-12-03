@@ -14,7 +14,6 @@ library(conflicted)
 library(dplyr)
 conflicts_prefer(dplyr::filter)
 library(gt)
-library(gtsummary)
 library(here)
 library(labelled)
 library(purrr)
@@ -39,6 +38,15 @@ coded_responses_file <- here(
   "raw",
   "incoming-dsci-major-students-survey.xlsx"
 )
+
+tabulate_coded_responses <- function(coded_survey, coded_response_column) {
+  coded_survey |>
+    separate_longer_delim({{ coded_response_column }}, delim = "; ") |>
+    drop_na({{ coded_response_column }}) |>
+    count({{ coded_response_column }}, sort = TRUE) |>
+    copy_labels_from(coded_survey) |>
+    gt()
+}
 ```
 
 ### Qualtrics survey data
@@ -160,31 +168,23 @@ coded_survey |>
 ```{r}
 #| label: application-process
 
-coded_survey |>
-  separate_longer_delim(q3_coded, delim = "; ") |>
-  tbl_summary(include = q3_coded)
+tabulate_coded_responses(coded_survey, q3_coded)
 ```
 
 ```{r}
 #| label: ranking
 
-coded_survey |>
-  separate_longer_delim(q4_coded, delim = "; ") |>
-  tbl_summary(include = q4_coded)
+tabulate_coded_responses(coded_survey, q4_coded)
 ```
 
 ```{r}
 #| label: interests
 
-coded_survey |>
-  separate_longer_delim(q5_coded, delim = "; ") |>
-  tbl_summary(include = q5_coded)
+tabulate_coded_responses(coded_survey, q5_coded)
 ```
 
 ```{r}
 #| label: concerns
 
-coded_survey |>
-  separate_longer_delim(q6_coded, delim = "; ") |>
-  tbl_summary(include = q6_coded)
+tabulate_coded_responses(coded_survey, q6_coded)
 ```
