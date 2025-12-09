@@ -43,12 +43,24 @@ coded_responses_file <- here(
 )
 
 tabulate_coded_responses <- function(coded_survey, coded_response_column) {
+  row_col_label <- coded_survey |>
+    pull({{ coded_response_column }}) |>
+    var_label()
+
   coded_survey |>
     separate_longer_delim({{ coded_response_column }}, delim = "; ") |>
     drop_na({{ coded_response_column }}) |>
     count({{ coded_response_column }}, sort = TRUE) |>
+    mutate(percent = n / nrow(coded_survey)) |>
     copy_labels_from(coded_survey) |>
-    gt()
+    set_variable_labels(
+      n = "$n$",
+      percent = "Percent of $n$"
+    ) |>
+    gt(rowname_col = as_name(enquo(coded_response_column))) |>
+    tab_stubhead(label = row_col_label) |>
+    fmt_percent(columns = percent, decimals = 0) |>
+    cols_label_with(fn = md)
 }
 ```
 
@@ -164,23 +176,40 @@ coded_survey |>
   # Ensure that each respondent's coded open-ended responses is not redundant
   # and thus doubly reported with multiple-choice selections
   distinct(response_id, q2) |>
-  copy_labels_from(coded_survey) |>
   count(q2, sort = TRUE) |>
-  gt()
+  mutate(percent = n / nrow(coded_survey)) |>
+  copy_labels_from(coded_survey) |>
+  set_variable_labels(
+    n = "$n$",
+    percent = "Percent of $n$"
+  ) |>
+  gt(rowname_col = "q2") |>
+  tab_stubhead(label = var_label(coded_survey$q2)) |>
+  fmt_percent(columns = percent, decimals = 0) |>
+  cols_label_with(fn = md) |>
+  tab_row_group(
+    label = "Other",
+    rows = starts_with("Other:")
+  )
+
 ```
 
-Students' multiple answers and coded opend-ended ("Other:") responses ($n$ = `{r} nrow(coded_survey)`).
+Students' multiple answers and coded opend-ended ("Other") responses ($n$ = `{r} nrow(coded_survey)`).
 :::
 
 ::: {#tbl-application-process}
 ```{r}
 #| label: application-process
 
-tabulate_coded_responses(coded_survey, q3_coded)
+tabulate_coded_responses(coded_survey, q3_coded) |>
+  tab_row_group(
+    label = "Transfer students",
+    rows = starts_with("Transfer students:")
+  )
 ```
 
 Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(coded_survey)`).
-"Transfer:" indicates answers from transfer students.
+"Transfer students" indicates answers from transfer students.
 :::
 
 ::: {#tbl-ranking}
@@ -197,11 +226,15 @@ Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(code
 ```{r}
 #| label: interests
 
-tabulate_coded_responses(coded_survey, q5_coded)
+tabulate_coded_responses(coded_survey, q5_coded) |>
+  tab_row_group(
+    label = "Skills",
+    rows = starts_with("Skills:")
+  )
 ```
 
 Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(coded_survey)`).
-"Skill" indicates responses denoting interest in learning that particular skill.
+"Skills" indicates responses denoting interest in learning that particular skill.
 :::
 
 ::: {#tbl-concerns}
