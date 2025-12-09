@@ -18,6 +18,7 @@ format:
     respect-user-color-scheme: true
     citation-hover: true
     footnotes-hover: true
+    axe: true
 
 bibliography: references.bib
 
