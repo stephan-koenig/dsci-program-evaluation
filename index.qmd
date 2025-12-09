@@ -62,6 +62,12 @@ tabulate_coded_responses <- function(coded_survey, coded_response_column) {
     fmt_percent(columns = percent, decimals = 0) |>
     cols_label_with(fn = md)
 }
+
+get_n_responses <- function(coded_survey, response_column) {
+  coded_survey |>
+    drop_na({{ response_column }}) |>
+    nrow()
+}
 ```
 
 ### Qualtrics survey data
@@ -194,7 +200,7 @@ coded_survey |>
 
 ```
 
-Students' multiple answers and coded opend-ended ("Other") responses ($n$ = `{r} nrow(coded_survey)`).
+Students' multiple answers and coded opend-ended ("Other") responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q2)`).
 :::
 
 ::: {#tbl-application-process}
@@ -208,7 +214,7 @@ tabulate_coded_responses(coded_survey, q3_coded) |>
   )
 ```
 
-Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(coded_survey)`).
+Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q3_coded)`).
 "Transfer students" indicates answers from transfer students.
 :::
 
@@ -219,7 +225,7 @@ Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(code
 tabulate_coded_responses(coded_survey, q4_coded)
 ```
 
-Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(coded_survey)`).
+Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q4_coded)`).
 :::
 
 ::: {#tbl-interests}
@@ -233,7 +239,7 @@ tabulate_coded_responses(coded_survey, q5_coded) |>
   )
 ```
 
-Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(coded_survey)`).
+Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q5_coded)`).
 "Skills" indicates responses denoting interest in learning that particular skill.
 :::
 
@@ -243,5 +249,5 @@ Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(code
 
 tabulate_coded_responses(coded_survey, q6_coded)
 ```
-Students' multiple answers and coded opend-ended responses ($n$ = `{r} nrow(coded_survey)`).
+Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q6_coded)`).
 :::
