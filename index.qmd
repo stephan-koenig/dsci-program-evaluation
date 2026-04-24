@@ -12,7 +12,6 @@ execute:
 ```{r}
 #| label: setup
 #| message: false
-
 library(conflicted)
 library(dplyr)
 conflicts_prefer(dplyr::filter)
@@ -68,6 +67,24 @@ get_n_responses <- function(coded_survey, response_column) {
     drop_na({{ response_column }}) |>
     nrow()
 }
+
+end_of_second_year_dsci_major_students_survey_file <- here::here(
+  "data",
+  "raw",
+  "end-of-second-year-dsci-major-students-survey.qs2"
+)
+
+end_of_second_year_dictionary_file <- here(
+  "data",
+  "raw",
+  "end-of-second-year-dsci-major-students-survey-dictionary.qs2"
+)
+
+end_of_second_year_coded_responses_file <- here::here(
+  "data",
+  "raw",
+  "end-of-second-year-dsci-major-students-survey.xlsx"
+)
 ```
 
 ### Qualtrics survey data
@@ -78,7 +95,6 @@ In addition, request access to the Qualtrics Data Science surveys from Stephan K
 ```{r}
 #| label: qualtrics
 #| eval: false
-
 # Do only once per system
 # keyring::key_set("qualtrics_api_key")
 qualtRics::qualtrics_api_credentials(
@@ -96,6 +112,17 @@ qualtRics::fetch_survey(
   qs2::qs_save(incoming_dsci_major_students_survey_file)
 qualtRics::survey_questions(incoming_dsci_major_students_survey_id) |>
   qs2::qs_save(dictionary_file)
+
+end_of_second_year_dsci_major_students_survey_id <- surveys$id[
+  surveys$name == "DSCI 200: Mid-course survey"
+]
+qualtRics::fetch_survey(
+  end_of_second_year_dsci_major_students_survey_id,
+  breakout_sets = FALSE
+) |>
+  qs2::qs_save(end_of_second_year_dsci_major_students_survey_file)
+qualtRics::survey_questions(end_of_second_year_dsci_major_students_survey_id) |>
+  qs2::qs_save(end_of_second_year_dictionary_file)
 ```
 
 Qualtrics delimiter for multiple selections (`,` surrounded by no spaces) was replaced with `; `
@@ -104,7 +131,6 @@ Full length questions were downloaded as a dictionary.
 
 ```{r}
 #| label: load-data
-
 incoming_students_survey <-
   qs2::qs_read(incoming_dsci_major_students_survey_file) |>
   janitor::clean_names() |>
@@ -114,6 +140,9 @@ completed_incoming_students_survey <- incoming_students_survey |>
   filter(progress >= 89)
 
 dictionary <- qs2::qs_read(dictionary_file)
+end_of_second_year_dictionary <- qs2::qs_read(
+  end_of_second_year_dictionary_file
+)
 ```
 
 An Excel version of the data was also downloaded. For each open-ended question, a dedicated sheet was created (for example, sheet "q6" for question 6) and then responses were manually coded.
@@ -121,7 +150,6 @@ Multiple codes assigned to a response are separated by `; `.
 
 ```{r}
 #| label: coded-responses
-
 sheet_names <- str_c("q", 2:6)
 coded_responses <- map(
   sheet_names,
@@ -166,6 +194,56 @@ coded_survey <- left_join(
     q5_coded = full_questions$q5,
     q6_coded = full_questions$q6
   )
+
+end_of_second_year_survey <-
+  qs2::qs_read(end_of_second_year_dsci_major_students_survey_file) |>
+  janitor::clean_names()
+
+end_of_second_year_dsci_major_students_survey <- end_of_second_year_survey |>
+  filter(q24 == "Yes")
+
+end_of_second_year_sheet_names <- str_c("q", 25:27)
+end_of_second_year_coded_responses <- map(
+  end_of_second_year_sheet_names,
+  \(sheet) {
+    read_xlsx(
+      end_of_second_year_coded_responses_file,
+      sheet = sheet,
+      skip = 1
+    ) |>
+      janitor::clean_names()
+  }
+) |>
+  reduce(
+    \(x, y) {
+      full_join(
+        x,
+        y,
+        by = join_by(
+          response_id
+        ),
+        relationship = "one-to-one"
+      )
+    }
+  )
+
+end_of_second_year_full_questions <- end_of_second_year_dictionary |>
+  mutate(qname = str_to_lower(qname)) |>
+  dictionary_to_variable_labels(
+    names_from = qname,
+    labels_from = question
+  )
+
+end_of_second_year_coded_survey <- left_join(
+  end_of_second_year_dsci_major_students_survey,
+  end_of_second_year_coded_responses,
+  by = join_by(response_id)
+) |>
+  set_variable_labels(
+    q25_coded = end_of_second_year_full_questions$q25,
+    q26_coded = end_of_second_year_full_questions$q26,
+    q27_coded = end_of_second_year_full_questions$q27
+  )
 ```
 
 ## Incoming DSCI Major students survey
@@ -173,7 +251,6 @@ coded_survey <- left_join(
 ::: {#tbl-information}
 ```{r}
 #| label: information
-
 coded_survey |>
   select(response_id, q2, q2_coded) |>
   separate_longer_delim(q2, delim = "; ") |>
@@ -197,7 +274,6 @@ coded_survey |>
     label = "Other",
     rows = starts_with("Other:")
   )
-
 ```
 
 Students' multiple answers and coded opend-ended ("Other") responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q2)`).
@@ -206,7 +282,6 @@ Students' multiple answers and coded opend-ended ("Other") responses (respondent
 ::: {#tbl-application-process}
 ```{r}
 #| label: application-process
-
 tabulate_coded_responses(coded_survey, q3_coded) |>
   tab_row_group(
     label = "Transfer students",
@@ -221,7 +296,6 @@ Students' multiple answers and coded opend-ended responses (respondents $n$ = `{
 ::: {#tbl-ranking}
 ```{r}
 #| label: ranking
-
 tabulate_coded_responses(coded_survey, q4_coded)
 ```
 
@@ -231,7 +305,6 @@ Students' multiple answers and coded opend-ended responses (respondents $n$ = `{
 ::: {#tbl-interests}
 ```{r}
 #| label: interests
-
 tabulate_coded_responses(coded_survey, q5_coded) |>
   tab_row_group(
     label = "Skills",
@@ -246,8 +319,36 @@ Students' multiple answers and coded opend-ended responses (respondents $n$ = `{
 ::: {#tbl-concerns}
 ```{r}
 #| label: concerns
-
 tabulate_coded_responses(coded_survey, q6_coded)
 ```
 Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q6_coded)`).
+:::
+
+## End of second year DSCI Major students survey
+
+::: {#tbl-preparation-from-prereqs}
+```{r}
+#| label: preparation-from-prereqs
+tabulate_coded_responses(end_of_second_year_coded_survey, q25_coded)
+```
+
+Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(end_of_second_year_coded_survey)`, reponses to question $k$ = `{r} get_n_responses(end_of_second_year_coded_survey, q25_coded)`).
+:::
+
+::: {#tbl-change-in-interest}
+```{r}
+#| label: change-in-interest
+tabulate_coded_responses(end_of_second_year_coded_survey, q26_coded)
+```
+
+Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(end_of_second_year_coded_survey)`, reponses to question $k$ = `{r} get_n_responses(end_of_second_year_coded_survey, q26_coded)`).
+:::
+
+::: {#tbl-navigating-program}
+```{r}
+#| label: navigating-program
+tabulate_coded_responses(end_of_second_year_coded_survey, q27_coded)
+```
+
+Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(end_of_second_year_coded_survey)`, reponses to question $k$ = `{r} get_n_responses(end_of_second_year_coded_survey, q27_coded)`).
 :::
