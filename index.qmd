@@ -248,6 +248,20 @@ end_of_second_year_coded_survey <- left_join(
 
 ## Incoming DSCI Major students survey
 
+The Incoming DSCI Major students survey focused on capturing the experience of students navigating the program requirements, their reasons for selecting the program and any concerns about it and their interest in the co-op program.
+
+### Questions
+
+```{r}
+#| label: incoming-questions
+dictionary |>
+  filter_out(qname %in% c("Q1", "Q9")) |>
+  select(question) |>
+  gt()
+```
+
+### Responses
+
 ::: {#tbl-information}
 ```{r}
 #| label: information
@@ -321,10 +335,24 @@ Students' coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)
 #| label: concerns
 tabulate_coded_responses(coded_survey, q6_coded)
 ```
-Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q6_coded)`).
+Students' coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q6_coded)`).
 :::
 
 ## End of second year DSCI Major students survey
+
+The end of second year survey asked students about their prepardness for the second-year DSCI courses, how their interest in data science has evolved and how they will navigate future course selection.
+
+### Questions
+
+```{r}
+#| label: second-year-exit-questions
+end_of_second_year_dictionary |>
+  filter(qname %in% c("Q25", "Q26", "Q27")) |>
+  select(question) |>
+  gt()
+```
+
+### Responses
 
 ::: {#tbl-preparation-from-prereqs}
 ```{r}
