@@ -289,7 +289,7 @@ tabulate_coded_responses(coded_survey, q3_coded) |>
   )
 ```
 
-Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q3_coded)`).
+Students' coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q3_coded)`).
 "Transfer students" indicates answers from transfer students.
 :::
 
@@ -299,7 +299,7 @@ Students' multiple answers and coded opend-ended responses (respondents $n$ = `{
 tabulate_coded_responses(coded_survey, q4_coded)
 ```
 
-Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q4_coded)`).
+Students' coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q4_coded)`).
 :::
 
 ::: {#tbl-interests}
@@ -312,7 +312,7 @@ tabulate_coded_responses(coded_survey, q5_coded) |>
   )
 ```
 
-Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q5_coded)`).
+Students' coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q5_coded)`).
 "Skills" indicates responses denoting interest in learning that particular skill.
 :::
 
