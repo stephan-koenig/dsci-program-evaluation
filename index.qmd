@@ -54,8 +54,9 @@ tabulate_coded_responses <- function(coded_survey, coded_response_column) {
     copy_labels_from(coded_survey) |>
     set_variable_labels(
       n = "$n$",
-      percent = "Percent of $n$"
+      percent = "Percent of $N$"
     ) |>
+    # arrange({{ coded_response_column }}) |>
     gt(rowname_col = as_name(enquo(coded_response_column))) |>
     tab_stubhead(label = row_col_label) |>
     fmt_percent(columns = percent, decimals = 0) |>
@@ -278,7 +279,7 @@ coded_survey |>
   copy_labels_from(coded_survey) |>
   set_variable_labels(
     n = "$n$",
-    percent = "Percent of $n$"
+    percent = "Percent of $N$"
   ) |>
   gt(rowname_col = "q2") |>
   tab_stubhead(label = var_label(coded_survey$q2)) |>
@@ -290,7 +291,7 @@ coded_survey |>
   )
 ```
 
-Students' multiple answers and coded opend-ended ("Other") responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q2)`).
+Students' multiple answers and coded opend-ended ("Other") responses (respondents $N$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q2)`).
 :::
 
 ::: {#tbl-application-process}
@@ -303,7 +304,7 @@ tabulate_coded_responses(coded_survey, q3_coded) |>
   )
 ```
 
-Students' coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q3_coded)`).
+Students' coded opend-ended responses (respondents $N$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q3_coded)`).
 "Transfer students" indicates answers from transfer students.
 :::
 
@@ -313,7 +314,7 @@ Students' coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)
 tabulate_coded_responses(coded_survey, q4_coded)
 ```
 
-Students' coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q4_coded)`).
+Students' coded opend-ended responses (respondents $N$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q4_coded)`).
 :::
 
 ::: {#tbl-interests}
@@ -326,7 +327,7 @@ tabulate_coded_responses(coded_survey, q5_coded) |>
   )
 ```
 
-Students' coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q5_coded)`).
+Students' coded opend-ended responses (respondents $N$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q5_coded)`).
 "Skills" indicates responses denoting interest in learning that particular skill.
 :::
 
@@ -335,7 +336,7 @@ Students' coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)
 #| label: concerns
 tabulate_coded_responses(coded_survey, q6_coded)
 ```
-Students' coded opend-ended responses (respondents $n$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q6_coded)`).
+Students' coded opend-ended responses (respondents $N$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q6_coded)`).
 :::
 
 ## End of second year DSCI Major students survey
@@ -360,7 +361,7 @@ end_of_second_year_dictionary |>
 tabulate_coded_responses(end_of_second_year_coded_survey, q25_coded)
 ```
 
-Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(end_of_second_year_coded_survey)`, reponses to question $k$ = `{r} get_n_responses(end_of_second_year_coded_survey, q25_coded)`).
+Students' multiple answers and coded opend-ended responses (respondents $N$ = `{r} nrow(end_of_second_year_coded_survey)`, reponses to question $k$ = `{r} get_n_responses(end_of_second_year_coded_survey, q25_coded)`).
 :::
 
 ::: {#tbl-change-in-interest}
@@ -369,7 +370,7 @@ Students' multiple answers and coded opend-ended responses (respondents $n$ = `{
 tabulate_coded_responses(end_of_second_year_coded_survey, q26_coded)
 ```
 
-Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(end_of_second_year_coded_survey)`, reponses to question $k$ = `{r} get_n_responses(end_of_second_year_coded_survey, q26_coded)`).
+Students' multiple answers and coded opend-ended responses (respondents $N$ = `{r} nrow(end_of_second_year_coded_survey)`, reponses to question $k$ = `{r} get_n_responses(end_of_second_year_coded_survey, q26_coded)`).
 :::
 
 ::: {#tbl-navigating-program}
@@ -378,5 +379,5 @@ Students' multiple answers and coded opend-ended responses (respondents $n$ = `{
 tabulate_coded_responses(end_of_second_year_coded_survey, q27_coded)
 ```
 
-Students' multiple answers and coded opend-ended responses (respondents $n$ = `{r} nrow(end_of_second_year_coded_survey)`, reponses to question $k$ = `{r} get_n_responses(end_of_second_year_coded_survey, q27_coded)`).
+Students' multiple answers and coded opend-ended responses (respondents $N$ = `{r} nrow(end_of_second_year_coded_survey)`, reponses to question $k$ = `{r} get_n_responses(end_of_second_year_coded_survey, q27_coded)`).
 :::
