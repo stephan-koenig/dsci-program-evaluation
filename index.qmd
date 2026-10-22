@@ -68,6 +68,15 @@ tabulate_coded_responses <- function(coded_survey, coded_response_column) {
     pivot_wider(names_from = cohort, values_from = c(n, r, percent)) |>
     relocate(ends_with("2025"), ends_with("2026"), .after = last_col()) |>
     gt(rowname_col = as_name(enquo(coded_response_column))) |>
+    cols_add(dir = percent_2026 > percent_2025, .after = r_2025) |>
+    fmt_tf(
+      columns = dir,
+      tf_style = "triangles",
+      colors = c("green", "red")
+    ) |>
+    cols_label(
+      dir = ""
+    ) |>
     cols_merge_n_pct(
       col_n = r_2025,
       col_pct = percent_2025
@@ -82,6 +91,7 @@ tabulate_coded_responses <- function(coded_survey, coded_response_column) {
       r_2026 = md(glue::glue("2026<br>*n* = {n_for$cohort_2026}<br>*r* (%)"))
     ) |>
     fmt_percent(columns = starts_with("percent"), decimals = 0) |>
+    sub_missing(missing_text = "") |>
     # arrange({{ coded_response_column }}) |>
     tab_header(title = row_col_label) |>
     cols_label_with(fn = md)
@@ -363,6 +373,15 @@ coded_survey |>
   ) |>
   gt(rowname_col = "q2") |>
   tab_header(title = var_label(coded_survey$q2)) |>
+  cols_add(dir = percent_2026 > percent_2025, .after = r_2025) |>
+  fmt_tf(
+    columns = dir,
+    tf_style = "triangles",
+    colors = c("green", "red")
+  ) |>
+  cols_label(
+    dir = ""
+  ) |>
   cols_merge_n_pct(
     col_n = r_2025,
     col_pct = percent_2025
@@ -377,6 +396,7 @@ coded_survey |>
     r_2026 = md("2026<br>*n* = 32<br>*r* (%)")
   ) |>
   fmt_percent(columns = starts_with("percent"), decimals = 0) |>
+  sub_missing(missing_text = "") |>
   cols_label_with(fn = md) |>
   tab_row_group(
     label = "Other",
