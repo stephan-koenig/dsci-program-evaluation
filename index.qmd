@@ -46,19 +46,77 @@ tabulate_coded_responses <- function(coded_survey, coded_response_column) {
     pull({{ coded_response_column }}) |>
     var_label()
 
-  coded_survey |>
+  coded_survey_with_n <- coded_survey |>
+    filter_out(is.na({{ coded_response_column }})) |>
+    mutate(n = length(unique(response_id)), .by = cohort)
+
+  n_for <- coded_survey_with_n |>
+    distinct(cohort, n) |>
+    pivot_wider(
+      names_from = cohort,
+      names_prefix = "cohort_",
+      values_from = n
+    ) |>
+    transpose() |>
+    list_transpose()
+
+  coded_survey_with_n |>
     separate_longer_delim({{ coded_response_column }}, delim = "; ") |>
     drop_na({{ coded_response_column }}) |>
-    count({{ coded_response_column }}, sort = TRUE) |>
-    mutate(percent = n / nrow(coded_survey)) |>
-    copy_labels_from(coded_survey) |>
-    set_variable_labels(
-      n = "$n$",
-      percent = "Percent of $N$"
+    count(cohort, n, {{ coded_response_column }}, sort = TRUE, name = "r") |>
+    mutate(percent = r / n) |>
+    pivot_wider(names_from = cohort, values_from = c(n, r, percent)) |>
+    relocate(ends_with("2025"), ends_with("2026"), .after = last_col()) |>
+    gt(rowname_col = as_name(enquo(coded_response_column))) |>
+    cols_merge_n_pct(
+      col_n = r_2025,
+      col_pct = percent_2025
     ) |>
+    cols_merge_n_pct(
+      col_n = r_2026,
+      col_pct = percent_2026
+    ) |>
+    cols_hide(c(n_2025, n_2026)) |>
+    cols_label(
+      r_2025 = md(glue::glue("2025<br>*n* = {n_for$cohort_2025}<br>*r* (%)")),
+      r_2026 = md(glue::glue("2026<br>*n* = {n_for$cohort_2026}<br>*r* (%)"))
+    ) |>
+    fmt_percent(columns = starts_with("percent"), decimals = 0) |>
+    # arrange({{ coded_response_column }}) |>
+    tab_header(title = row_col_label) |>
+    cols_label_with(fn = md)
+}
+
+tabulate_coded_responses_without_cohort <- function(
+  coded_survey,
+  coded_response_column
+) {
+  row_col_label <- coded_survey |>
+    pull({{ coded_response_column }}) |>
+    var_label()
+
+  coded_survey_with_n <- coded_survey |>
+    filter_out(is.na({{ coded_response_column }})) |>
+    mutate(n = length(unique(response_id)))
+
+  n_responses <- unique(coded_survey_with_n$n)
+
+  coded_survey_with_n |>
+    separate_longer_delim({{ coded_response_column }}, delim = "; ") |>
+    drop_na({{ coded_response_column }}) |>
+    count(n, {{ coded_response_column }}, sort = TRUE, name = "r") |>
+    mutate(percent = r / n) |>
     # arrange({{ coded_response_column }}) |>
     gt(rowname_col = as_name(enquo(coded_response_column))) |>
-    tab_stubhead(label = row_col_label) |>
+    tab_header(title = row_col_label) |>
+    cols_merge_n_pct(
+      col_n = r,
+      col_pct = percent
+    ) |>
+    cols_label(
+      r = md(glue::glue("*n* = {n_responses}<br>*r* (%)"))
+    ) |>
+    cols_hide(n) |>
     fmt_percent(columns = percent, decimals = 0) |>
     cols_label_with(fn = md)
 }
@@ -135,7 +193,10 @@ Full length questions were downloaded as a dictionary.
 incoming_students_survey <-
   qs2::qs_read(incoming_dsci_major_students_survey_file) |>
   janitor::clean_names() |>
-  mutate(q2 = str_replace_all(q2, "(?<=\\S),(?=\\S)", "; "))
+  mutate(
+    q2 = str_replace_all(q2, "(?<=\\S),(?=\\S)", "; "),
+    cohort = lubridate::year(recorded_date)
+  )
 
 completed_incoming_students_survey <- incoming_students_survey |>
   filter(progress >= 89)
@@ -195,6 +256,17 @@ coded_survey <- left_join(
     q5_coded = full_questions$q5,
     q6_coded = full_questions$q6
   )
+
+N_for <- coded_survey |>
+  select(cohort, response_id) |>
+  count(cohort, name = "N") |>
+  pivot_wider(
+    names_from = cohort,
+    names_prefix = "cohort_",
+    values_from = N
+  ) |>
+  transpose() |>
+  list_transpose()
 
 end_of_second_year_survey <-
   qs2::qs_read(end_of_second_year_dsci_major_students_survey_file) |>
@@ -267,23 +339,44 @@ dictionary |>
 ```{r}
 #| label: information
 coded_survey |>
-  select(response_id, q2, q2_coded) |>
+  select(response_id, cohort, q2, q2_coded) |>
   separate_longer_delim(q2, delim = "; ") |>
-  mutate(q2 = if_else(str_detect(q2, "Please"), q2_coded, q2)) |>
+  mutate(
+    q2 = if_else(str_detect(q2, "Please"), q2_coded, q2),
+    n = length(unique(response_id)),
+    .by = cohort
+  ) |>
   drop_na(q2) |>
   # Ensure that each respondent's coded open-ended responses is not redundant
   # and thus doubly reported with multiple-choice selections
-  distinct(response_id, q2) |>
-  count(q2, sort = TRUE) |>
-  mutate(percent = n / nrow(coded_survey)) |>
+  distinct(response_id, cohort, n, q2) |>
+  count(cohort, n, q2, sort = TRUE, name = "r") |>
+  mutate(percent = r / n) |>
   copy_labels_from(coded_survey) |>
+  pivot_wider(names_from = cohort, values_from = c(n, r, percent)) |>
+  relocate(ends_with("2025"), ends_with("2026"), .after = last_col()) |>
   set_variable_labels(
-    n = "$n$",
-    percent = "Percent of $N$"
+    r_2025 = "$r$",
+    r_2026 = "$r$",
+    percent_2025 = "Percent of $n$",
+    percent_2026 = "Percent of $n$"
   ) |>
   gt(rowname_col = "q2") |>
-  tab_stubhead(label = var_label(coded_survey$q2)) |>
-  fmt_percent(columns = percent, decimals = 0) |>
+  tab_header(title = var_label(coded_survey$q2)) |>
+  cols_merge_n_pct(
+    col_n = r_2025,
+    col_pct = percent_2025
+  ) |>
+  cols_merge_n_pct(
+    col_n = r_2026,
+    col_pct = percent_2026
+  ) |>
+  cols_hide(c(n_2025, n_2026)) |>
+  cols_label(
+    r_2025 = md("2025<br>*n* = 32<br>*r* (%)"),
+    r_2026 = md("2026<br>*n* = 32<br>*r* (%)")
+  ) |>
+  fmt_percent(columns = starts_with("percent"), decimals = 0) |>
   cols_label_with(fn = md) |>
   tab_row_group(
     label = "Other",
@@ -291,7 +384,7 @@ coded_survey |>
   )
 ```
 
-Students' multiple answers and coded opend-ended ("Other") responses (respondents $N$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q2)`).
+Students' multiple answers and coded opend-ended ("Other") responses (respondents $N_{2025}$ = `{r} N_for$cohort_2025` and $N_{2026}$ = `{r} N_for$cohort_2026`).
 :::
 
 ::: {#tbl-application-process}
@@ -304,7 +397,7 @@ tabulate_coded_responses(coded_survey, q3_coded) |>
   )
 ```
 
-Students' coded opend-ended responses (respondents $N$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q3_coded)`).
+Students' coded opend-ended responses (respondents $N_{2025}$ = `{r} N_for$cohort_2025` and $N_{2026}$ = `{r} N_for$cohort_2026`).
 "Transfer students" indicates answers from transfer students.
 :::
 
@@ -314,7 +407,7 @@ Students' coded opend-ended responses (respondents $N$ = `{r} nrow(coded_survey)
 tabulate_coded_responses(coded_survey, q4_coded)
 ```
 
-Students' coded opend-ended responses (respondents $N$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q4_coded)`).
+Students' coded opend-ended responses (respondents $N_{2025}$ = `{r} N_for$cohort_2025` and $N_{2026}$ = `{r} N_for$cohort_2026`).
 :::
 
 ::: {#tbl-interests}
@@ -327,7 +420,7 @@ tabulate_coded_responses(coded_survey, q5_coded) |>
   )
 ```
 
-Students' coded opend-ended responses (respondents $N$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q5_coded)`).
+Students' coded opend-ended response (respondents $N_{2025}$ = `{r} N_for$cohort_2025` and $N_{2026}$ = `{r} N_for$cohort_2026`).
 "Skills" indicates responses denoting interest in learning that particular skill.
 :::
 
@@ -336,7 +429,7 @@ Students' coded opend-ended responses (respondents $N$ = `{r} nrow(coded_survey)
 #| label: concerns
 tabulate_coded_responses(coded_survey, q6_coded)
 ```
-Students' coded opend-ended responses (respondents $N$ = `{r} nrow(coded_survey)`, reponses to question $k$ = `{r} get_n_responses(coded_survey, q6_coded)`).
+Students' coded opend-ended responses  (respondents $N_{2025}$ = `{r} N_for$cohort_2025` and $N_{2026}$ = `{r} N_for$cohort_2026`).
 :::
 
 ## End of second year DSCI Major students survey
@@ -351,6 +444,10 @@ end_of_second_year_dictionary |>
   filter(qname %in% c("Q25", "Q26", "Q27")) |>
   select(question) |>
   gt()
+
+N_of_end_of_second_year_survey <- end_of_second_year_coded_survey$response_id |>
+  unique() |>
+  length()
 ```
 
 ### Responses
@@ -358,26 +455,35 @@ end_of_second_year_dictionary |>
 ::: {#tbl-preparation-from-prereqs}
 ```{r}
 #| label: preparation-from-prereqs
-tabulate_coded_responses(end_of_second_year_coded_survey, q25_coded)
+tabulate_coded_responses_without_cohort(
+  end_of_second_year_coded_survey,
+  q25_coded
+)
 ```
 
-Students' multiple answers and coded opend-ended responses (respondents $N$ = `{r} nrow(end_of_second_year_coded_survey)`, reponses to question $k$ = `{r} get_n_responses(end_of_second_year_coded_survey, q25_coded)`).
+Students' multiple answers and coded opend-ended responses (respondents $N$ = `{r} N_of_end_of_second_year_survey`).
 :::
 
 ::: {#tbl-change-in-interest}
 ```{r}
 #| label: change-in-interest
-tabulate_coded_responses(end_of_second_year_coded_survey, q26_coded)
+tabulate_coded_responses_without_cohort(
+  end_of_second_year_coded_survey,
+  q26_coded
+)
 ```
 
-Students' multiple answers and coded opend-ended responses (respondents $N$ = `{r} nrow(end_of_second_year_coded_survey)`, reponses to question $k$ = `{r} get_n_responses(end_of_second_year_coded_survey, q26_coded)`).
+Students' multiple answers and coded opend-ended responses (respondents $N$ = `{r} N_of_end_of_second_year_survey`).
 :::
 
 ::: {#tbl-navigating-program}
 ```{r}
 #| label: navigating-program
-tabulate_coded_responses(end_of_second_year_coded_survey, q27_coded)
+tabulate_coded_responses_without_cohort(
+  end_of_second_year_coded_survey,
+  q27_coded
+)
 ```
 
-Students' multiple answers and coded opend-ended responses (respondents $N$ = `{r} nrow(end_of_second_year_coded_survey)`, reponses to question $k$ = `{r} get_n_responses(end_of_second_year_coded_survey, q27_coded)`).
+Students' multiple answers and coded opend-ended responses (respondents $N$ = `{r} N_of_end_of_second_year_survey`).
 :::
